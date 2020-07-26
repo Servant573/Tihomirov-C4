@@ -136,12 +136,14 @@ export default {
       }
     }
   },
+  updated() {
+    this.saveTodos();
+  },
   methods: {
     getTodos() {
       axios.get(dataURL)
         .then((response) => {
           this.todos = response.data.tasks;
-          this.saveTodos();
         })
         .catch((error) => console.log(error))
         .finally(() => {
