@@ -8,7 +8,7 @@
         id="task-add"
         class="btn btn-success btn-sm align-left d-block"
         v-b-modal.todo-modal>Добавить задачу</button>
-      <Counter :countTask="counterResult(todos)"></Counter>
+      <Counter :countTask="counterResult()"></Counter>
 
       <table class="table table-dark table-stripped table-hover">
         <thead class="thead-light">
@@ -97,17 +97,13 @@
   </div>
 </template>
 <script>
-
 /* eslint max-len: ["error", { "code": 120 }] */
-
 /* eslint linebreak-style: ["error", "windows"] */
-
 import axios from 'axios';
 import Counter from '@/components/Counter.vue';
 import Confirmation from '@/components/Confirmation.vue';
 
 const dataURL = 'http://localhost:5000/api/tasks/';
-
 export default {
   name: 'Todo',
   data() {
@@ -134,6 +130,7 @@ export default {
       } catch (e) {
         console.log('Fail');
         localStorage.removeItem('todos');
+        this.getTodos();
       } finally {
         console.log('Работает');
       }
@@ -144,8 +141,15 @@ export default {
       axios.get(dataURL)
         .then((response) => {
           this.todos = response.data.tasks;
+          this.saveTodos();
         })
-        .catch((error) => console.log(error));
+        .catch((error) => console.log(error))
+        .finally(() => {
+          if (localStorage.getItem('todos')) {
+            this.todos = JSON.parse(localStorage.getItem('todos'));
+            console.log('getTodos взял данные из локалки');
+          }
+        });
     },
     resetForm() {
       this.addTodoForm.description = '';
@@ -168,7 +172,6 @@ export default {
         })
         .catch((error) => console.log(error));
       this.resetForm();
-      this.saveTodos();
     },
     onReset(event) {
       event.preventDefault();
@@ -191,7 +194,6 @@ export default {
           this.getTodos();
           this.confirmationMessage = 'Задача обновлена';
           this.showConfirmation = true;
-          this.saveTodos();
         })
         .catch((error) => console.log(error));
     },
@@ -207,7 +209,6 @@ export default {
           this.getTodos();
           this.confirmationMessage = 'Задача удалена из списка';
           this.showConfirmation = true;
-          this.saveTodos();
         })
         .catch((error) => console.log('Удаление провал', error));
     },
@@ -216,19 +217,10 @@ export default {
       localStorage.setItem('todos', parsed);
       console.log('localStorage обновлен');
     },
-    counterResult(todos) {
-      const doneTask = todos.filter((t) => t.is_completed).length;
-      const allTask = todos.length;
-      return `Всего задач: ${allTask}. Выполнено: ${doneTask}, осталось: ${allTask - doneTask}`;
+    counterResult() {
+      return `Всего задач: ${this.todos.length}. Выполнено: ${this.todos.filter((t) => t.is_completed).length}`;
     },
   },
-  // watch: {
-  //   counterResult(todos) {
-  //     const doneTask = todos.filter((t) => t.is_completed).length;
-  //     const allTask = todos.length;
-  //     return `Всего задач: ${allTask}. Выполнено: ${doneTask}, осталось: ${allTask - doneTask}`;
-  //   },
-  // },
   components: {
     confirmation: Confirmation,
     Counter,
@@ -237,7 +229,6 @@ export default {
     this.getTodos();
   },
 };
-
 </script>
 
 <style>
